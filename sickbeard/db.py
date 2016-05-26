@@ -49,37 +49,44 @@ def dbFilename(filename="sickbeard.db", suffix=None):
 
 
 class DBConnection(object):
-    def __init__(self, filename="sickbeard.db", suffix=None, row_type=None):
+    def __init__(self, filename="sickbeard.db", suffix=None, row_type=None, in_memory=False):
 
         self.filename = filename
         self.suffix = suffix
         self.row_type = row_type
 
-        try:
-            if self.filename not in db_cons or not db_cons[self.filename]:
-                db_locks[self.filename] = threading.Lock()
+        if in_memory:
+            self.filename = 'memory'
+            db_locks[self.filename] = threading.Lock()
+            self.connection = sqlite3.connect(":memory:", check_same_thread=False)
+            self.connection.text_factory = DBConnection._unicode_text_factory
+            db_cons[self.filename] = self.connection
+        else:
+            try:
+                if self.filename not in db_cons or not db_cons[self.filename]:
+                    db_locks[self.filename] = threading.Lock()
 
-                self.connection = sqlite3.connect(dbFilename(self.filename, self.suffix), 20, check_same_thread=False)
-                self.connection.text_factory = DBConnection._unicode_text_factory
+                    self.connection = sqlite3.connect(dbFilename(self.filename, self.suffix), 20, check_same_thread=False)
+                    self.connection.text_factory = DBConnection._unicode_text_factory
 
-                db_cons[self.filename] = self.connection
-            else:
-                self.connection = db_cons[self.filename]
+                    db_cons[self.filename] = self.connection
+                else:
+                    self.connection = db_cons[self.filename]
 
-            # start off row factory configured as before out of
-            # paranoia but wait to do so until other potential users
-            # of the shared connection are done using
-            # it... technically not required as row factory is reset
-            # in all the public methods after the lock has been
-            # aquired
-            with db_locks[self.filename]:
-                self._set_row_factory()
+                # start off row factory configured as before out of
+                # paranoia but wait to do so until other potential users
+                # of the shared connection are done using
+                # it... technically not required as row factory is reset
+                # in all the public methods after the lock has been
+                # aquired
+                with db_locks[self.filename]:
+                    self._set_row_factory()
 
-        except OperationalError:
-            logger.log(u'Please check your database owner/permissions: {}'.format(dbFilename(self.filename, self.suffix)), logger.WARNING)
-        except Exception as e:
-            logger.log(u"DB error: " + ex(e), logger.ERROR)
-            raise
+            except OperationalError:
+                logger.log(u'Please check your database owner/permissions: {}'.format(dbFilename(self.filename, self.suffix)), logger.WARNING)
+            except Exception as e:
+                logger.log(u"DB error: " + ex(e), logger.ERROR)
+                raise
 
     def _set_row_factory(self):
         """

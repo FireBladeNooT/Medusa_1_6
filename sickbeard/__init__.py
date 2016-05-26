@@ -54,7 +54,7 @@ from sickbeard.common import SD
 from sickbeard.common import SKIPPED
 from sickbeard.common import WANTED
 from sickbeard.providers.rsstorrent import TorrentRssProvider
-from sickbeard.databases import main_db, cache_db, failed_db
+from sickbeard.databases import main_db, cache_db, failed_db, memory_db
 from sickbeard.providers.newznab import NewznabProvider
 
 from sickrage.helper.encoding import ek
@@ -604,6 +604,8 @@ RECENTLY_DELETED = set()
 
 PRIVACY_LEVEL = 'normal'
 
+MEMORY_DB_CON = None
+
 
 def get_backlog_cycle_time():
     cycletime = DAILYSEARCH_FREQUENCY * 2 + 7
@@ -657,7 +659,8 @@ def initialize(consoleLogging=True):  # pylint: disable=too-many-locals, too-man
             AUTOPOSTPROCESSER_FREQUENCY, SHOWUPDATE_HOUR, \
             ANIME_DEFAULT, NAMING_ANIME, ANIMESUPPORT, USE_ANIDB, ANIDB_USERNAME, ANIDB_PASSWORD, ANIDB_USE_MYLIST, \
             ANIME_SPLIT_HOME, SCENE_DEFAULT, DOWNLOAD_URL, BACKLOG_DAYS, GIT_USERNAME, GIT_PASSWORD, \
-            DEVELOPER, gh, DISPLAY_ALL_SEASONS, SSL_VERIFY, NEWS_LAST_READ, NEWS_LATEST, SOCKET_TIMEOUT, RECENTLY_DELETED
+            DEVELOPER, gh, DISPLAY_ALL_SEASONS, SSL_VERIFY, NEWS_LAST_READ, NEWS_LATEST, SOCKET_TIMEOUT, RECENTLY_DELETED, \
+            MEMORY_DB_CON
 
         if __INITIALIZED__:
             return False
@@ -1442,6 +1445,11 @@ def initialize(consoleLogging=True):  # pylint: disable=too-many-locals, too-man
         # fix up any db problems
         main_db_con = db.DBConnection()
         db.sanityCheckDatabase(main_db_con, main_db.MainSanityCheck)
+
+        # initialize in memory database. Use this db if you want to add in-memory tables
+        # Just import the global and use the connection
+        MEMORY_DB_CON = db.DBConnection(in_memory=True)
+        db.upgradeDatabase(MEMORY_DB_CON, memory_db.InitialSchema)
 
         # migrate the config if it needs it
         migrator = ConfigMigrator(CFG)

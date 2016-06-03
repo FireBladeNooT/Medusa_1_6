@@ -127,18 +127,18 @@ class Scheduler(threading.Thread):
         def gettid():
             """Get TID as displayed by htop."""
             libc = 'libc.so.6'
-            try:
-                for cmd in (186, 224, 178):
-                    tid = ctypes.CDLL(libc).syscall(cmd)
-                    if tid != -1:
-                        return tid
-            except Exception:
-                return
+            for cmd in (186, 224, 178):
+                tid = ctypes.CDLL(libc).syscall(cmd)
+                if tid != -1:
+                    return tid
         # Get current thread
         current = threading.current_thread()
-        # Patch _get_ident
-        threading._get_ident = gettid
-        # Update active dictionary
-        threading._active[gettid()] = threading._active.pop(current.ident)
-        # Set new identifier for the current thread
-        current._set_ident()
+        try:
+            # Patch _get_ident
+            threading._get_ident = gettid
+            # Update active dictionary
+            threading._active[gettid()] = threading._active.pop(current.ident)
+            # Set new identifier for the current thread
+            current._set_ident()
+        except Exception:
+            return

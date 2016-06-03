@@ -31,6 +31,7 @@
     <table id="schedulerStatusTable" class="tablesorter" width="100%">
         <thead>
             <tr>
+                <th>ident</th>
                 <th>Scheduler</th>
                 <th>Alive</th>
                 <th>Enable</th>
@@ -46,6 +47,7 @@
             % for schedulerName, scheduler in schedulerList.iteritems():
                <% service = getattr(sickbeard, scheduler) %>
            <tr>
+               <td>${service.ident}</td>
                <td>${schedulerName}</td>
                % if service.isAlive():
                <td style="background-color:green">${service.isAlive()}</td>

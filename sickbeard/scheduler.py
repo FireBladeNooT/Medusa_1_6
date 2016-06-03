@@ -50,7 +50,6 @@ class Scheduler(threading.Thread):
         self.stop = threading.Event()
         self.force = False
         self.enable = False
-        self.patch_thread_identifier()
 
     def timeLeft(self):
         """
@@ -81,6 +80,7 @@ class Scheduler(threading.Thread):
         """
         Runs the thread
         """
+        self.patch_thread_identifier()
         try:
             while not self.stop.is_set():
                 if self.enable:
@@ -132,13 +132,13 @@ class Scheduler(threading.Thread):
                 if tid != -1:
                     return tid
         # Get current thread
-        current = self
+        current = threading.current_thread()
         try:
             # Patch _get_ident
             self._get_ident = gettid
             # Update active dictionary
-            self._active[gettid()] = self._active.pop(current.ident)
+            threading._active[gettid()] = threading._active.pop(current.ident)
             # Set new identifier for the current thread
-            self._set_ident()
+            current._set_ident()
         except Exception:
             return

@@ -22,6 +22,8 @@ import datetime
 import time
 import threading
 import traceback
+import ctypes
+import os
 
 from sickbeard import logger
 from sickrage.helper.exceptions import ex
@@ -48,6 +50,7 @@ class Scheduler(threading.Thread):
         self.stop = threading.Event()
         self.force = False
         self.enable = False
+        self.patch_thread_identifier()
 
     def timeLeft(self):
         """
@@ -114,3 +117,28 @@ class Scheduler(threading.Thread):
         except Exception as e:
             logger.log(u"Exception generated in thread " + self.name + ": " + ex(e), logger.ERROR)
             logger.log(repr(traceback.format_exc()), logger.DEBUG)
+
+    def patch_thread_identifier(self):
+        """Replace python thread identifier by TID."""
+        # Define get tid function
+        if os.name == 'nt':
+            return
+
+        def gettid():
+            """Get TID as displayed by htop."""
+            libc = 'libc.so.6'
+            try:
+                for cmd in (186, 224, 178):
+                    tid = ctypes.CDLL(libc).syscall(cmd)
+                    if tid != -1:
+                        return tid
+            except Exception:
+                return
+        # Get current thread
+        current = threading.current_thread()
+        # Patch _get_ident
+        threading._get_ident = gettid
+        # Update active dictionary
+        threading._active[gettid()] = threading._active.pop(current.ident)
+        # Set new identifier for the current thread
+        current._set_ident()

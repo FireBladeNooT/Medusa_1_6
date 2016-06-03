@@ -132,13 +132,13 @@ class Scheduler(threading.Thread):
                 if tid != -1:
                     return tid
         # Get current thread
-        current = threading.current_thread()
+        current = self
         try:
             # Patch _get_ident
-            threading._get_ident = gettid
+            self._get_ident = gettid
             # Update active dictionary
-            threading._active[gettid()] = threading._active.pop(current.ident)
+            self._active[gettid()] = self._active.pop(current.ident)
             # Set new identifier for the current thread
-            current._set_ident()
+            self._set_ident()
         except Exception:
             return

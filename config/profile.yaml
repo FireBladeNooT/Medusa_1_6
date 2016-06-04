@@ -1,0 +1,22 @@
+settings:
+  prioritize_provider: no
+profiles:
+  -
+    name: My profile 1
+    id: my_profile_1
+    description: A quality profile used on show x,y,z and provider x
+    enabled_providers:
+      - oznzb
+      - usenet_crawler
+      - hdbits
+    enabled_shows:
+      -
+        indexer: 1
+        indexer_id: 12345
+      -
+        indexer: 2
+        indexer_id: 12344
+  -
+    name: My profile 2
+    id: my_profile_2
+    description: A quality profile used on provider y

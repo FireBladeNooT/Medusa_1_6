@@ -5,6 +5,65 @@ profiles:
     name: My profile 1
     id: my_profile_1
     description: A quality profile used on show x,y,z and provider x
+    # I want to really create a dynamic configuration
+    # Meaning that each profile can apply to a show, or to a provider
+    # For example only download 1080WEBDL from providers x an y
+    # And download 1080 and 720 from provider z
+    enabled_providers:
+      -
+        provider_id: oznzb
+      -
+        provider_id: usenet_crawler
+      -
+        provider_id: hdbits
+    # Maybe this isn't the best location for, but currently I can't really
+    # think of a better way
+    enabled_shows:
+      -
+        indexer: 1
+        indexer_id: 12345
+      -
+        indexer: 2
+        indexer_id: 12344
+    quality_options:
+      use_quality_options: yes
+      root_dir: D:\media\shows
+      preferred_quality: 4
+      subtitles: no
+      status_previous: 3
+      status_future: 5
+      flatten_folders: no
+      is_anime: no
+      scene_numbering: yes
+      fansub_groups_whitelist:
+        - Blablab_Subs
+        - HorribleHorrible
+        - LALALA
+      fansub_groups_blacklist:
+        - Really_bullshit
+    search_options:
+      use_search_options: yes
+      enable_daily: yes
+      enable_backlog: yes
+      enable_manual: yes
+      torrent_seed: 0.5
+      torrent_minimum_seed: 1
+      torrent_minimum_leech: 0
+      torrent_freeleech: no
+      season_search_mode: episode #can also be season
+      season_search_fallback: no
+      delay_snatch: yes
+      delay_time: 1 hour
+      # You can configure a delay on a provider, and configure in the profile,
+      # if the provider, should start with it's delay timer, when a show get's
+      # its first match on that provider.
+      delay_wait_on_provider: oznzb
+  # this is the second profile in the list, it's not complete, but this is also
+  # just for demo purposses
+  -
+    name: My profile 2
+    id: my_profile_2
+    description: A quality profile used on provider y
     enabled_providers:
       - oznzb
       - usenet_crawler
@@ -16,7 +75,36 @@ profiles:
       -
         indexer: 2
         indexer_id: 12344
-  -
-    name: My profile 2
-    id: my_profile_2
-    description: A quality profile used on provider y
+    quality_options:
+      use_quality_options: yes
+      root_dir: D:\media\shows
+      preferred_quality: 4
+      subtitles: no
+      status_previous: 3
+      status_future: 5
+      flatten_folders: no
+      is_anime: no
+      scene_numbering: yes
+      fansub_groups_whitelist:
+        - Blablab_Subs
+        - HorribleHorrible
+        - LALALA
+      fansub_groups_blacklist:
+        - Really_bullshit
+    search_options:
+      use_search_options: no
+      enable_daily: yes
+      enable_backlog: yes
+      enable_manual: yes
+      torrent_seed: 0.5
+      torrent_minimum_seed: 1
+      torrent_minimum_leech: 0
+      torrent_freeleech: no
+      season_search_mode: episode #can also be season
+      season_search_fallback: no
+      delay_snatch: yes
+      delay_time: 1 hour
+      # You can configure a delay on a provider, and configure in the profile,
+      # if the provider, should start with it's delay timer, when a show get's
+      # its first match on that provider.
+      delay_wait_on_provider: oznzb

@@ -1296,16 +1296,22 @@ def initialize(consoleLogging=True):  # pylint: disable=too-many-locals, too-man
         # initialize NZB and TORRENT providers
         providerList = providers.makeProviderList()
 
+        # Generate the providerList
+        # This is the list with default providers, loaded from /sickbeard/providers/
         for cur_provider in providerList:
             cur_provider.load_config()
+
+        newznabProviderList = NewznabProvider.get_yaml_providers_list()
+        for nn_provider in newznabProviderList:
+            nn_provider.load_config()
 
 # This is legacy from the old ini loading, is all replaced using a per provider yaml file
 #         NEWZNAB_DATA = check_setting_str(CFG, 'Newznab', 'newznab_data', '')
 #         newznabProviderList = NewznabProvider.get_providers_list(NEWZNAB_DATA)
-# 
+#
 #         TORRENTRSS_DATA = check_setting_str(CFG, 'TorrentRss', 'torrentrss_data', '')
 #         torrentRssProviderList = TorrentRssProvider.get_providers_list(TORRENTRSS_DATA)
-# 
+#
 #         # dynamically load provider settings
 #         for curTorrentProvider in [curProvider for curProvider in providers.sortedProviderList() if
 #                                    curProvider.provider_type == GenericProvider.TORRENT]:

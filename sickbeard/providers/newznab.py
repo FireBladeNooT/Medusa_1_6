@@ -33,6 +33,7 @@ from sickbeard.common import cpu_presets
 from sickrage.helper.common import convert_size, try_int
 from sickrage.helper.encoding import ek, ss
 from sickrage.providers.nzb.NZBProvider import NZBProvider
+from sickrage.config.yamlloader import YamlLoader
 
 
 class NewznabProvider(NZBProvider):  # pylint: disable=too-many-instance-attributes, too-many-arguments
@@ -43,8 +44,9 @@ class NewznabProvider(NZBProvider):  # pylint: disable=too-many-instance-attribu
     """
     # pylint: disable=too-many-arguments
 
-    def __init__(self, name, url, key='0', catIDs='5030,5040', search_mode='eponly',
-                 search_fallback=False, enable_daily=True, enable_backlog=False, enable_manualsearch=False):
+    def __init__(self, name, url, key='0', cat_ids='5030,5040', search_mode='eponly',
+                 search_fallback=False, enable_daily=True, enable_backlog=False,
+                 enable_manualsearch=False):
 
         NZBProvider.__init__(self, name)
 
@@ -61,12 +63,14 @@ class NewznabProvider(NZBProvider):  # pylint: disable=too-many-instance-attribu
         self.needs_auth = self.key != '0'
         self.public = not self.needs_auth
 
-        self.catIDs = catIDs if catIDs else '5030,5040'
+        self.cat_ids = cat_ids if cat_ids else '5030,5040'
 
         self.default = False
 
         self.caps = False
         self.cap_tv_search = None
+
+        self.is_newznab = True
         # self.cap_search = None
         # self.cap_movie_search = None
         # self.cap_audio_search = None
@@ -82,6 +86,27 @@ class NewznabProvider(NZBProvider):  # pylint: disable=too-many-instance-attribu
             self.search_mode, str(int(self.search_fallback)),
             str(int(self.enable_daily)), str(int(self.enable_backlog)), str(int(self.enable_manualsearch))
         ])
+
+    @staticmethod
+    def get_yaml_providers_list():
+        """
+        Get the newznab providers. These are loaded from DATA_DIR/config/{newznab_provider_id}.yml
+        if the provider config can't be found, a new empty one is generated.
+        """
+        # Get list with newznab providers
+        newznab_providers = []
+        provider_configs = YamlLoader('provider.yml').data['newznab_providers']['default']
+        for config in provider_configs:
+            # First try to load from the individual {provider_id}.yml config file
+            # After it has been loaded, let's try to see if we have a provider specific config file and overwrite from that
+            new_provider = NewznabProvider._make_provider(config)
+
+            # If we don't have a provider specific config it's automatically created
+            new_provider.load_config()
+
+            # Add it to the list
+            newznab_providers.append(new_provider)
+        return newznab_providers
 
     @staticmethod
     def get_providers_list(data):
@@ -241,29 +266,17 @@ class NewznabProvider(NZBProvider):  # pylint: disable=too-many-instance-attribu
         if not config:
             return None
 
-        try:
-            values = config.split('|')
-            # Pad values with None for each missing value
-            values.extend([None for x in range(len(values), 10)])
-
-            (name, url, key, category_ids, enabled,
-             search_mode, search_fallback,
-             enable_daily, enable_backlog, enable_manualsearch
-             ) = values
-
-        except ValueError:
-            logger.log('Skipping Newznab provider string: {config!r}, incorrect format'.format
-                       (config=config), logger.ERROR)
-            return None
-
         new_provider = NewznabProvider(
-            name, url, key=key, catIDs=category_ids,
-            search_mode=search_mode or 'eponly',
-            search_fallback=search_fallback or 0,
-            enable_daily=enable_daily or 0,
-            enable_backlog=enable_backlog or 0,
-            enable_manualsearch=enable_manualsearch or 0)
-        new_provider.enabled = enabled == '1'
+            config.get('provider_name'),
+            config.get('url'),
+            key=config.get('key'),
+            cat_ids=config.get('cat_ids'),
+            search_mode=config.get('search_mode', 'eponly'),
+            search_fallback=config.get('search_fallback', 0),
+            enable_daily=config.get('enable_daily', 0),
+            enable_backlog=config.get('enable_backlog', 0),
+            enable_manualsearch=config.get('enable_manualsearch', 0))
+        new_provider.enabled = config.get('enabled', 1)
 
         return new_provider
 
@@ -391,3 +404,13 @@ class NewznabProvider(NZBProvider):  # pylint: disable=too-many-instance-attribu
         Returns int size or -1
         """
         return try_int(item.get('size', -1), -1)
+
+    def save_config(self):
+        # Save config providers individual providers file
+        super(NewznabProvider, self).save_config()
+        # Also save the provider to the providers.yml as a custom newznab provider
+        provider_config = YamlLoader('provider.yml')
+        if (self.get_id() not in [provider_id for provider_id in provider_config.data['newznab_providers']['default']] and
+                self.get_id() not in [provider_id for provider_id in provider_config.data['newznab_providers']['custom']]):
+                provider_config.data['newznab_providers']['custom'].append(self.get_id())
+                provider_config.save()

@@ -47,7 +47,7 @@ class YamlLoader(object):
     :param yaml_config: config file location. Filename should end with the extention .yml
     '''
 
-    def __init__(self, yaml_config, callback):
+    def __init__(self, yaml_config, callback=None):
         '''
         :param yaml_config: The yaml config filename, will be placed in DATA_DIR/config/
         :param callback: the object instance that's calling the yamlloader.
@@ -63,7 +63,7 @@ class YamlLoader(object):
         if not os.path.isfile(self.config_file):
             logger.error("Can't find yaml file location: [%s], creating new config %s in %s",
                          self.config_file, self.config_file, self.config_dir)
-            new_data = self.new_config()
+            new_data = self.new()
             if new_data:
                 # Saving succeeded, we should got back a dict
                 self.data = new_data
@@ -75,6 +75,7 @@ class YamlLoader(object):
             txt = f.read()
         except IOError:
             logger.error("Error: can't find file or read data")
+            return
         else:
             self.yaml_load = True
             logger.debug("Loaded config file %s successfully", self.config_file)
@@ -97,8 +98,11 @@ class YamlLoader(object):
             self.yaml_parse = True
 
     def new(self):
+        if not self.callback:
+            return
+
         self.data = self.callback.init_config()
-        self.save_config()
+        self.save()
         return self.data
 
     def save(self, data=None):

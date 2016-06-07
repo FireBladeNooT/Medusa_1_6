@@ -84,11 +84,16 @@ class GenericProvider(object):  # pylint: disable=too-many-instance-attributes
         shuffle(self.bt_cache_urls)
 
     def load_config(self):
-        self.config = YamlLoader('{provider_id}.yml'.format(provider_id=self.get_id()), self)
+        self.config = YamlLoader('{provider_id}.yml'.format(provider_id=self.get_id()), callback=self)
+        for key, value in self.config.data.iteritems():
+            if key not in ['provider_name', 'provider_id']:
+                setattr(self, key, value)
+        self.name = self.config.data.get('provider_name')
+
         print('Loading config for provider {provider_id}'.format(provider_id=self.get_id()))
 
     def save_config(self):
-        self.config.save()
+        self.config.save(self.__dict__())
         print('Saving config for provider {provider_id}'.format(provider_id=self.get_id()))
 
     def download_result(self, result):
@@ -541,6 +546,7 @@ class GenericProvider(object):  # pylint: disable=too-many-instance-attributes
 
     def __dict__(self):
         return {'provider_id': self.get_id(),
+                'provider_name': self.name,
                 'enable_backlog': self.enable_backlog,
                 'enable_manualsearch': self.enable_manualsearch,
                 'enable_daily': self.enable_daily,

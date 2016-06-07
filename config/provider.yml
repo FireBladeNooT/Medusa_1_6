@@ -1,0 +1,135 @@
+newznab_providers:
+  custom: []
+  default:
+  - absolute_numbering: false
+    api_key: ''
+    cat_ids:
+    - 5030
+    - 5040
+    - 5010
+    enable_backlog: true
+    enable_daily: true
+    enable_manualsearch: true
+    enabled: false
+    is_newznab: true
+    password: ''
+    proper_string:
+    - PROPER
+    - REPACK
+    - RERIP
+    provider_id: nzbcat
+    provider_name: NZB.cat
+    provider_type: torrent
+    public: true
+    search_fallback: false
+    search_mode: eponly
+    support_backlog: false
+    url: https://nzb.cat/
+    username: ''
+  - absolute_numbering: false
+    api_key: ''
+    cat_ids:
+    - 5030
+    - 5040
+    enable_backlog: true
+    enable_daily: true
+    enable_manualsearch: true
+    enabled: false
+    is_newznab: true
+    password: ''
+    proper_string:
+    - PROPER
+    - REPACK
+    - RERIP
+    provider_id: nzbgeek
+    provider_name: NZBGeek
+    provider_type: nzb
+    public: true
+    search_fallback: false
+    search_mode: eponly
+    support_backlog: false
+    url: https://api.nzbgeek.info/
+    username: ''
+  - absolute_numbering: false
+    api_key: ''
+    cat_ids:
+    - 5030
+    - 5040
+    enable_backlog: true
+    enable_daily: true
+    enable_manualsearch: true
+    enabled: false
+    is_newznab: true
+    password: ''
+    proper_string:
+    - PROPER
+    - REPACK
+    - RERIP
+    provider_id: nzbsorg
+    provider_name: NZBs.org
+    provider_type: nzb
+    public: true
+    search_fallback: false
+    search_mode: eponly
+    support_backlog: false
+    url: https://api.nzbgeek.info/
+    username: ''
+  - absolute_numbering: false
+    api_key: ''
+    cat_ids:
+    - 5030
+    - 5040
+    enable_backlog: true
+    enable_daily: true
+    enable_manualsearch: true
+    enabled: false
+    is_newznab: true
+    password: ''
+    proper_string:
+    - PROPER
+    - REPACK
+    - RERIP
+    provider_id: usenetcrawler
+    provider_name: Usenet-Crawler
+    provider_type: nzb
+    public: true
+    search_fallback: false
+    search_mode: eponly
+    support_backlog: false
+    url: https://www.usenet-crawler.com/
+    username: ''
+  - absolute_numbering: false
+    api_key: ''
+    cat_ids:
+    - 5030
+    - 5040
+    - 5060
+    - 5070
+    enable_backlog: true
+    enable_daily: true
+    enable_manualsearch: true
+    enabled: false
+    is_newznab: true
+    password: ''
+    proper_string:
+    - PROPER
+    - REPACK
+    - RERIP
+    provider_id: dognzb
+    provider_name: DOGnzb
+    provider_type: nzb
+    public: true
+    search_fallback: false
+    search_mode: eponly
+    support_backlog: false
+    url: https://api.dognzb.cr/
+    username: ''
+provider_order: []
+trackers_list:
+- udp://coppersurfer.tk:6969/announce
+- udp://open.demonii.com:1337
+- udp://exodus.desync.com:6969
+- udp://9.rarbg.me:2710/announce
+- udp://glotorrents.pw:6969/announce
+- udp://tracker.openbittorrent.com:80/announce
+- udp://9.rarbg.to:2710/announce

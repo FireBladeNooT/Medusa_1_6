@@ -37,6 +37,7 @@ from sickbeard.tvcache import TVCache
 from sickrage.helper.common import replace_extension, sanitize_filename
 from sickrage.helper.encoding import ek
 from sickrage.helper.exceptions import ex
+from sickrage.config.yamlloader import YamlLoader
 
 
 class GenericProvider(object):  # pylint: disable=too-many-instance-attributes
@@ -45,6 +46,7 @@ class GenericProvider(object):  # pylint: disable=too-many-instance-attributes
 
     def __init__(self, name):
         self.name = name
+        self.config = None
 
         self.anime_only = False
         self.bt_cache_urls = [
@@ -72,7 +74,22 @@ class GenericProvider(object):  # pylint: disable=too-many-instance-attributes
         self.url = ''
         self.urls = {}
 
+        # New attributes
+        self.is_newznab = None
+        self.cat_ids = []
+        self.api_key = ''
+        self.username = ''
+        self.password = ''
+
         shuffle(self.bt_cache_urls)
+
+    def load_config(self):
+        self.config = YamlLoader('{provider_id}.yml'.format(provider_id=self.get_id()), self)
+        print('Loading config for provider {provider_id}'.format(provider_id=self.get_id()))
+
+    def save_config(self):
+        self.config.save()
+        print('Saving config for provider {provider_id}'.format(provider_id=self.get_id()))
 
     def download_result(self, result):
         if not self.login():
@@ -518,3 +535,28 @@ class GenericProvider(object):  # pylint: disable=too-many-instance-attributes
 
     def _verify_download(self, file_name=None):  # pylint: disable=unused-argument,no-self-use
         return True
+
+    def init_config(self):
+        return self.__dict__()
+
+    def __dict__(self):
+        return {'provider_id': self.get_id(),
+                'enable_backlog': self.enable_backlog,
+                'enable_manualsearch': self.enable_manualsearch,
+                'enable_daily': self.enable_daily,
+                'enabled': self.enabled,
+                'proper_string': self.proper_strings,
+                'provider_type': self.provider_type,
+                'public': self.public,
+                'search_fallback': self.search_fallback,
+                'search_mode': self.search_mode,
+                'absolute_numbering': self.supports_absolute_numbering,
+                'support_backlog': self.supports_backlog,
+                'url': self.url,
+                'urls': self.urls,
+                'is_newznab': self.is_newznab,
+                'cat_ids': self.cat_ids,
+                'api_key': self.api_key,
+                'username': self.username,
+                'password': self.password,
+                }

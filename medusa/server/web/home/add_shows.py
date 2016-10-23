@@ -6,6 +6,7 @@ import datetime
 import json
 import os
 import re
+import traceback
 
 import medusa as app
 from requests.compat import unquote_plus
@@ -330,7 +331,7 @@ class HomeAddShows(Home):
         try:
             recommended_shows = AnidbPopular().fetch_popular_shows(list_type)
         except Exception as e:
-            # print traceback.format_exc()
+            logger.log('Could not load Anidb show, with exception: {0!r}'.format(traceback.format_exc()), logger.DEBUG)
             recommended_shows = None
 
         return t.render(title="Popular Anime Shows", header="Popular Anime Shows",

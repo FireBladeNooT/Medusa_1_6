@@ -18,14 +18,14 @@ from ..provider import MalformedFileError, Provider
 
 logger = logging.getLogger(__name__)
 
-MEDIA_INFO_AVAILABLE = False
+MEDIA_INFO_LIB = None
 INITIALIZED = False
 
 
 def load_native():
-    global MEDIA_INFO_AVAILABLE, INITIALIZED
+    global MEDIA_INFO_LIB, INITIALIZED
     if INITIALIZED:
-        return MEDIA_INFO_AVAILABLE
+        return MEDIA_INFO_LIB
 
     os_family = 'windows' if (
         os.name in ('nt', 'dos', 'os2', 'ce')
@@ -43,15 +43,13 @@ def load_native():
                 if os.path.isfile(candidate):
                     so_name = candidate
                     break
-            CDLL(so_name)
-            MEDIA_INFO_AVAILABLE = True
+            MEDIA_INFO_LIB = CDLL(so_name)
         else:  # pragma: no cover
             os_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), '../native', os_family))
             if os_family == 'macos':
                 from ctypes import CDLL
                 logger.debug('Loading native mediainfo library from %s', os_folder)
-                CDLL(os.path.join(os_folder, 'libmediainfo.0.dylib'))
-                MEDIA_INFO_AVAILABLE = True
+                MEDIA_INFO_LIB = CDLL(os.path.join(os_folder, 'libmediainfo.0.dylib'))
             else:
                 from ctypes import windll
                 is_64bits = sys.maxsize > 2 ** 32
@@ -59,13 +57,13 @@ def load_native():
                 lib = os.path.join(os_folder, arch)
                 logger.debug('Loading native mediainfo library from %s', lib)
                 windll.MediaInfo = windll.LoadLibrary(os.path.join(lib, 'MediaInfo.dll'))
-                MEDIA_INFO_AVAILABLE = True
+                MEDIA_INFO_LIB = windll.MediaInfo
         logger.debug('MediaInfo loaded')
     except OSError:
         logger.warning('Unable to load native mediainfo library')
     finally:
         INITIALIZED = True
-    return MEDIA_INFO_AVAILABLE
+    return MEDIA_INFO_LIB
 
 
 class MediaInfoProvider(Provider):
@@ -140,7 +138,7 @@ class MediaInfoProvider(Provider):
 
     def describe(self, video_path, options):
         """Return video metadata."""
-        data = MediaInfo.parse(video_path).to_data()
+        data = MediaInfo.parse(video_path, MEDIA_INFO_LIB).to_data()
         if options.get('raw'):
             return data
 

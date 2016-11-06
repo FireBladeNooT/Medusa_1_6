@@ -65,8 +65,10 @@ class MediaInfo(object):
         except:
             return None
     @staticmethod
-    def parse(filename):
-        if os.name in ("nt", "dos", "os2", "ce"):
+    def parse(filename, lib=None):
+        if lib:
+            pass
+        elif os.name in ("nt", "dos", "os2", "ce"):
             lib = windll.MediaInfo
         elif sys.platform == "darwin":
             try:

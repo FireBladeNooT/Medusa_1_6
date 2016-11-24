@@ -23,6 +23,8 @@ from __future__ import unicode_literals
 import re
 import traceback
 
+from dateutil import parser
+
 from requests.compat import urljoin
 from requests.utils import dict_from_cookiejar
 
@@ -164,13 +166,16 @@ class HDSpaceProvider(TorrentProvider):
                     torrent_size = row.find('td', class_='lista222', attrs={'width': '100%'}).get_text()
                     size = convert_size(torrent_size) or -1
 
+                    pubdate_raw = row.findAll('td', class_='lista', attrs={'align': 'center'})[3].get_text()
+                    pubdate = parser.parse(pubdate_raw, fuzzy=True) if pubdate_raw else None
+
                     item = {
                         'title': title,
                         'link': download_url,
                         'size': size,
                         'seeders': seeders,
                         'leechers': leechers,
-                        'pubdate': None,
+                        'pubdate': pubdate,
                     }
                     if mode != 'RSS':
                         logger.log('Found result: {0} with {1} seeders and {2} leechers'.format

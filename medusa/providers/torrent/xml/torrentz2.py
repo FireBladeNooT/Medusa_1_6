@@ -21,6 +21,7 @@ from __future__ import unicode_literals
 import re
 import traceback
 
+from dateutil import parser
 from requests.compat import urljoin
 
 from ..torrent_provider import TorrentProvider
@@ -127,6 +128,8 @@ class Torrentz2Provider(TorrentProvider):
 
                     torrent_size, seeders, leechers = self._split_description(row.find('description').text)
                     size = convert_size(torrent_size) or -1
+                    pubdate_raw = row.pubDate.text if row.pubDate else None
+                    pubdate = parser.parse(pubdate_raw, fuzzy=True) if pubdate_raw else None
 
                     # Filter unseeded torrent
                     if seeders < min(self.minseed, 1):
@@ -142,7 +145,7 @@ class Torrentz2Provider(TorrentProvider):
                         'size': size,
                         'seeders': seeders,
                         'leechers': leechers,
-                        'pubdate': None,
+                        'pubdate': pubdate,
                     }
                     if mode != 'RSS':
                         logger.log('Found result: {0} with {1} seeders and {2} leechers'.format

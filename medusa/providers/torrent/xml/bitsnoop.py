@@ -18,7 +18,13 @@
 """Provider code for Bitsnoop."""
 from __future__ import unicode_literals
 
+import datetime
+
 import traceback
+
+from dateutil import parser
+
+from pytimeparse import parse
 
 from requests.compat import urljoin
 
@@ -136,13 +142,22 @@ class BitSnoopProvider(TorrentProvider):
                     torrent_size = row.find('size').text
                     size = convert_size(torrent_size) or -1
 
+                    pubdate = parser.parse(row.find('pubDate').text, fuzzy=True) if row.find('pubDate') else None
+                    if not pubdate:
+                        pubdate_raw = row.find("description").text.split(". Added")[1][:-4]
+                        if pubdate_raw != "long":  # If it's not "Added long ago"
+                            pubdate = str(datetime.datetime.now() - datetime.timedelta(seconds=parse(pubdate_raw))) \
+                                if pubdate_raw else None
+                        else:
+                            pubdate = None
+
                     item = {
                         'title': title,
                         'link': download_url,
                         'size': size,
                         'seeders': seeders,
                         'leechers': leechers,
-                        'pubdate': None,
+                        'pubdate': pubdate,
                     }
                     if mode != 'RSS':
                         logger.log('Found result: {0} with {1} seeders and {2} leechers'.format

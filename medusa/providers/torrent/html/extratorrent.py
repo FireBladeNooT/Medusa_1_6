@@ -17,7 +17,10 @@
 """Provider code for Extratorrent."""
 from __future__ import unicode_literals
 
+import datetime
 import traceback
+
+from pytimeparse import parse
 
 from requests.compat import urljoin
 
@@ -168,13 +171,17 @@ class ExtraTorrentProvider(TorrentProvider):
                     torrent_size = cells[4 - decrease].get_text().replace('\xa0', ' ')
                     size = convert_size(torrent_size) or -1
 
+                    pubdate_raw = cells[3 - decrease].get_text()
+                    print(pubdate_raw)
+                    pubdate = str(datetime.datetime.now() - datetime.timedelta(seconds=parse(pubdate_raw))) if pubdate_raw else None
+                    print(pubdate)
                     item = {
                         'title': title,
                         'link': download_url,
                         'size': size,
                         'seeders': seeders,
                         'leechers': leechers,
-                        'pubdate': None,
+                        'pubdate': pubdate,
                     }
                     if mode != 'RSS':
                         logger.log('Found result: {0} with {1} seeders and {2} leechers'.format

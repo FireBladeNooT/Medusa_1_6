@@ -20,6 +20,8 @@ from __future__ import unicode_literals
 
 import traceback
 
+from dateutil import parser
+
 from requests.compat import urljoin
 from requests.utils import dict_from_cookiejar
 
@@ -154,13 +156,16 @@ class BithdtvProvider(TorrentProvider):
                     torrent_size = cells[6].get_text(' ')
                     size = convert_size(torrent_size, units=units) or -1
 
+                    pubdate_raw = cells[5].get_text(" ")
+                    pubdate = parser.parse(pubdate_raw, fuzzy=True) if pubdate_raw else None
+
                     item = {
                         'title': title,
                         'link': download_url,
                         'size': size,
                         'seeders': seeders,
                         'leechers': leechers,
-                        'pubdate': None,
+                        'pubdate': pubdate,
                     }
                     if mode != 'RSS':
                         logger.log('Found result: {0} with {1} seeders and {2} leechers'.format

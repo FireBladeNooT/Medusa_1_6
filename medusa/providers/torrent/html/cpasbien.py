@@ -21,6 +21,8 @@ from __future__ import unicode_literals
 import re
 import traceback
 
+from dateutil import parser
+
 from ..torrent_provider import TorrentProvider
 from .... import logger, tv_cache
 from ....bs4_parser import BS4Parser
@@ -124,13 +126,16 @@ class CpasbienProvider(TorrentProvider):
                     torrent_size = row.find(class_='poid').get_text(strip=True)
                     size = convert_size(torrent_size, units=units) or -1
 
+                    pubdate_raw = row.find('a')['title'].split("-")[1]
+                    pubdate = parser.parse(pubdate_raw, fuzzy=True) if pubdate_raw else None
+
                     item = {
                         'title': title,
                         'link': download_url,
                         'size': size,
                         'seeders': seeders,
                         'leechers': leechers,
-                        'pubdate': None,
+                        'pubdate': pubdate,
                     }
                     if mode != 'RSS':
                         logger.log('Found result: {0} with {1} seeders and {2} leechers'.format

@@ -19,9 +19,11 @@
 
 from __future__ import unicode_literals
 
+from collections import defaultdict
 import datetime
 import threading
 import time
+import warnings
 
 import adba
 from medusa.indexers.indexer_api import indexerApi
@@ -243,11 +245,15 @@ def combine_exceptions(*scene_exceptions):
     return combined_ex
 
 
-def _get_custom_exceptions():
+def _get_custom_exceptions(*indexers):
+    exception_source = 'custom_exceptions'
     custom_exceptions = {}
 
-    if should_refresh('custom_exceptions'):
-        for indexer in indexerApi().indexers:
+    if should_refresh(exception_source):
+        if not indexers:  # if a list of indexer ids to update wasn't passed...
+            indexers = indexerApi().indexers   # use this list of ids
+
+        for indexer in indexers:
             try:
                 location = indexerApi(indexer).config['scene_loc']
                 logger.log('Checking for scene exception updates from {0}'.format(location))
@@ -257,7 +263,8 @@ def _get_custom_exceptions():
                 try:
                     jdata = response.json()
                 except (ValueError, AttributeError) as error:
-                    logger.log('Check scene exceptions update failed. Unable to update from {0}. Error: {1}'.format
+                    logger.log('Check scene exceptions update failed. '
+                               'Unable to update from {0}. Error: {1}'.format
                                (location, error), logger.DEBUG)
                     return custom_exceptions
 
@@ -271,83 +278,108 @@ def _get_custom_exceptions():
                                   ['identifier']][indexer_id][scene_season]]
                     custom_exceptions[indexer][indexer_id] = alias_list
             except Exception as error:
-                logger.log('Unable to update scene exceptions for {0}. Error: {1}'.format
+                logger.log('Unable to update scene exceptions for {0}. '
+                           'Error: {1}'.format
                            (indexer, error), logger.ERROR)
                 continue
 
-            set_last_refresh('custom_exceptions')
+            set_last_refresh(exception_source)
 
     return custom_exceptions
 
 
-def _get_xem_exceptions():
-    xem_exceptions = {}
+def _get_xem_exceptions(*indexers):
+    exception_source = 'xem'
+    xem_exceptions = defaultdict(dict)
 
-    if should_refresh('xem'):
-        for indexer in indexerApi().indexers:
+    if not should_refresh(exception_source):
+        logger.log('Skipped refresh of {0}; too soon.'.format
+                   (exception_source), logger.DEBUG)
+        return {}
 
-            # Not query XEM for unsupported indexers
-            if not indexerApi(indexer).config.get('xem_origin'):
-                continue
+    if not indexers:  # if a list of indexer ids to update wasn't passed...
+        indexers = indexerApi().indexers  # use this list of ids
 
-            logger.log('Checking for XEM scene exceptions updates for {0}'.format
-                       (indexerApi(indexer).name))
+    for indexer in indexers:
+        indexer = indexerApi(indexer)
+        origin = indexer.config().get('xem_origin')
+        # Not query XEM for unsupported indexers
+        if not origin:
+            continue
+        else:
+            assert origin in ('tvdb', 'anidb', 'rage')
 
-            if indexer not in xem_exceptions:
-                xem_exceptions[indexer] = {}
+        logger.log('Checking for XEM scene exceptions updates for {0}'.format
+                   (indexer.name))
 
-            xem_url = 'http://thexem.de/map/allNames?origin={0}&seasonNumbers=1'.format(
-                indexerApi(indexer).config['xem_origin'])
+        xem_params = {
+            'origin': origin,
+            'seasonNumbers': True,  # get season numbers for exceptions
+            'season': None,  # default get all seasons
+            'language': None,  # default get all languages
+            'defaultNames': None,  # don't add default show names
+        }
 
-            response = helpers.getURL(xem_url, session=xem_session, timeout=60, returns='response')
-            try:
-                jdata = response.json()
-            except (ValueError, AttributeError) as error:
-                logger.log('Check scene exceptions update failed for {0}. Unable to get URL: {1}'.format
-                           (indexerApi(indexer).name, xem_url), logger.DEBUG)
-                continue
+        assert xem_params['origin'] in ('tvdb', 'anidb', 'rage')
+        xem_url = 'http://thexem.de/map/allNames'
+        response = helpers.getURL(xem_url, params=xem_params,
+                                  session=xem_session, timeout=60,
+                                  returns='response')
 
-            if not jdata['data'] or jdata['result'] == 'failure':
-                logger.log('No data returned from XEM while checking for scene exceptions. '
-                           'Update failed for {0}'.format(indexerApi(indexer).name), logger.DEBUG)
-                continue
+        try:
+            jdata = response.json()
+        except (ValueError, AttributeError) as error:
+            logger.log('Check scene exceptions update failed for {0}. '
+                       'Unable to get URL: {1}'.format
+                       (indexer.name, xem_url), logger.DEBUG)
+        else:
+            exceptions = jdata.get('data')
+            if exceptions and jdata['result'] != 'failure':
+                xem_exceptions[indexer.indexer_id].update(exceptions)
+            else:
+                logger.log('No data returned from XEM while checking for '
+                           'scene exceptions. Update failed for {0}'.format
+                           (indexer.name), logger.DEBUG)
 
-            for indexer_id, exceptions in iteritems(jdata['data']):
-                try:
-                    xem_exceptions[indexer][indexer_id] = exceptions
-                except Exception as error:
-                    logger.log('XEM: Rejected entry: Indexer ID: {0}, Exceptions: {1}'.format
-                               (indexer_id, exceptions), logger.WARNING)
-                    logger.log('XEM: Rejected entry error message: {0}'.format(error), logger.ERROR)
-
-        set_last_refresh('xem')
-
+    set_last_refresh(exception_source)
     return xem_exceptions
 
 
-def _get_anidb_exceptions():
+def _get_anidb_exceptions(*indexers):
+    exception_source = 'anidb'
+
+    if indexers:
+        warnings.warn('Getting AniDB exceptions does not require '
+                      'passing indexers.')
+
     anidb_exceptions = {}
 
-    if should_refresh('anidb'):
+    if should_refresh(exception_source):
         logger.log('Checking for scene exceptions updates from AniDB')
 
         for show in app.showList:
-            if all([show.name, show.is_anime, show.indexer == INDEXER_TVDBV2]):
+            if all([show.name,
+                    show.is_anime,
+                    show.indexer == INDEXER_TVDBV2
+                    ]):
                 try:
                     anime = adba.Anime(None, name=show.name, tvdbid=show.indexerid, autoCorrectName=True)
                 except ValueError as error:
-                    logger.log("Couldn't update scene exceptions for {0}, AniDB doesn't have this show.".format
+                    logger.log("Couldn't update scene exceptions for {0}, "
+                               "AniDB doesn't have this show.".format
                                (show.name), logger.DEBUG)
                     continue
                 except Exception as error:
-                    logger.log('Checking AniDB scene exceptions update failed for {0}. Error: {1}'.format
+                    logger.log('Checking AniDB scene exceptions update failed '
+                               'for {0}. Error: {1}'.format
                                (show.name, error), logger.ERROR)
                     continue
 
                 if anime and anime.name != show.name:
-                    anidb_exceptions[INDEXER_TVDBV2] = {}
-                    anidb_exceptions[INDEXER_TVDBV2][text_type(show.indexerid)] = [{anime.name.decode('utf-8'): -1}]
+                    anidb_exceptions[INDEXER_TVDBV2] = {
+                        text_type(show.indexerid): [{anime.name.decode('utf-8'): -1}]
+                    }
 
-        set_last_refresh('anidb')
+        set_last_refresh(exception_source)
 
     return anidb_exceptions

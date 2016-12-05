@@ -66,7 +66,7 @@ from six import text_type
 from . import (
     app, auto_post_processor, cache, db, event_queue, exception_handler,
     helpers, logger as app_logger, metadata, name_cache, naming, network_timezones, providers,
-    scheduler, show_queue, show_updater, subtitles, trakt_checker, version_checker
+    scheduler, show_queue, show_updater, subtitles, torrent_checker, trakt_checker, version_checker
 )
 from .common import SD, SKIPPED, WANTED
 from .config import (
@@ -549,6 +549,7 @@ class Application(object):
 
             app.DOWNLOAD_PROPERS = bool(check_setting_int(app.CFG, 'General', 'download_propers', 1))
             app.PROPERS_SEARCH_DAYS = max(2, min(8, check_setting_int(app.CFG, 'General', 'propers_search_days', 2)))
+            app.REMOVE_FROM_CLIENT = bool(check_setting_int(app.CFG, 'General', 'remove_from_client', 0))
             app.CHECK_PROPERS_INTERVAL = check_setting_str(app.CFG, 'General', 'check_propers_interval', 'daily',
                                                            valid_values=('15m', '45m', '90m', '4h', 'daily'))
             app.RANDOMIZE_PROVIDERS = bool(check_setting_int(app.CFG, 'General', 'randomize_providers', 0))
@@ -1075,6 +1076,12 @@ class Application(object):
             app.subtitlesFinderScheduler = scheduler.Scheduler(subtitles.SubtitlesFinder(), cycleTime=update_interval, threadName="FINDSUBTITLES",
                                                                run_delay=update_interval, silent=not app.USE_SUBTITLES)
 
+            update_interval = datetime.timedelta(minutes=5)
+            app.torrentCheckerScheduler = scheduler.Scheduler(torrent_checker.TorrentChecker(),
+                                                              cycleTime=datetime.timedelta(minutes=30),
+                                                              threadName="TORRENTCHECKER",
+                                                              run_delay=update_interval)
+
             app.__INITIALIZED__ = True
             return True
 
@@ -1196,6 +1203,10 @@ class Application(object):
                 app.traktCheckerScheduler.silent = True
             app.traktCheckerScheduler.start()
 
+            app.torrentCheckerScheduler.enable = True
+            app.torrentCheckerScheduler.silent = False
+            app.torrentCheckerScheduler.start()
+
             app.started = True
 
     @staticmethod
@@ -1220,6 +1231,7 @@ class Application(object):
                 app.traktCheckerScheduler,
                 app.properFinderScheduler,
                 app.subtitlesFinderScheduler,
+                app.torrentCheckerScheduler,
                 app.events
             ]
 
@@ -1321,6 +1333,7 @@ class Application(object):
         new_config['General']['showupdate_hour'] = int(app.SHOWUPDATE_HOUR)
         new_config['General']['download_propers'] = int(app.DOWNLOAD_PROPERS)
         new_config['General']['propers_search_days'] = int(app.PROPERS_SEARCH_DAYS)
+        new_config['General']['remove_from_client'] = int(app.REMOVE_FROM_CLIENT)
         new_config['General']['randomize_providers'] = int(app.RANDOMIZE_PROVIDERS)
         new_config['General']['check_propers_interval'] = app.CHECK_PROPERS_INTERVAL
         new_config['General']['allow_high_priority'] = int(app.ALLOW_HIGH_PRIORITY)

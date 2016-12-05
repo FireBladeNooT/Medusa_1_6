@@ -81,7 +81,7 @@ properFinderScheduler = None
 autoPostProcessorScheduler = None
 subtitlesFinderScheduler = None
 traktCheckerScheduler = None
-
+torrentCheckerScheduler = None
 
 showList = []
 
@@ -225,6 +225,7 @@ TORRENT_DIR = None
 DOWNLOAD_PROPERS = False
 CHECK_PROPERS_INTERVAL = None
 PROPERS_SEARCH_DAYS = 2
+REMOVE_FROM_CLIENT = False
 ALLOW_HIGH_PRIORITY = False
 SAB_FORCED = False
 RANDOMIZE_PROVIDERS = False

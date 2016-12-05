@@ -166,5 +166,10 @@ class UTorrentAPI(GenericClient):
             'hash': result.hash,
         })
 
+    def _remove_torrent(self, info_hash):
+        return self._request(params={
+            'action': 'removedatatorrent',
+            'hash': info_hash,
+        })
 
 api = UTorrentAPI

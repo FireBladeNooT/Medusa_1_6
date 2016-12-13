@@ -21,8 +21,6 @@ from __future__ import unicode_literals
 import re
 import traceback
 
-from dateutil import parser
-
 from ..torrent_provider import TorrentProvider
 from .... import logger, tv_cache
 from ....bs4_parser import BS4Parser
@@ -127,7 +125,7 @@ class CpasbienProvider(TorrentProvider):
                     size = convert_size(torrent_size, units=units) or -1
 
                     pubdate_raw = row.find('a')['title'].split("-")[1]
-                    pubdate = parser.parse(pubdate_raw, fuzzy=True) if pubdate_raw else None
+                    pubdate = self._parse_pubdate(pubdate_raw)
 
                     item = {
                         'title': title,

@@ -21,8 +21,6 @@ from __future__ import unicode_literals
 import re
 import traceback
 
-from dateutil import parser
-
 from requests.compat import urljoin
 from requests.utils import dict_from_cookiejar
 
@@ -167,7 +165,7 @@ class TorrentBytesProvider(TorrentProvider):
                     size = convert_size(torrent_size) or -1
 
                     pubdate_raw = cells[labels.index('Added')].get_text(' ', strip=True)
-                    pubdate = parser.parse(pubdate_raw, fuzzy=True) if pubdate_raw else None
+                    pubdate = self._parse_pubdate(pubdate_raw)
 
                     item = {
                         'title': title,

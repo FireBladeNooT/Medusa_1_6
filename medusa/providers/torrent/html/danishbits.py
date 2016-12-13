@@ -20,8 +20,6 @@ from __future__ import unicode_literals
 
 import traceback
 
-from dateutil import parser
-
 from requests.compat import urljoin
 from requests.utils import dict_from_cookiejar
 
@@ -165,7 +163,7 @@ class DanishbitsProvider(TorrentProvider):
                     torrent_size = cells[labels.index('Størrelse')].contents[0]
                     size = convert_size(torrent_size, units=units) or -1
                     pubdate_raw = cells[labels.index('Tilføjet')].find('span')['title']
-                    pubdate = parser.parse(pubdate_raw, fuzzy=True) if pubdate_raw else None
+                    pubdate = self._parse_pubdate(pubdate_raw)
 
                     item = {
                         'title': title,

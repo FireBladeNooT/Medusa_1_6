@@ -22,8 +22,6 @@ import datetime
 import time
 import traceback
 
-from dateutil import parser
-
 from ..torrent_provider import TorrentProvider
 from .... import app, logger, tv_cache
 from ....helper.common import convert_size, try_int
@@ -188,8 +186,8 @@ class RarbgProvider(TorrentProvider):
                 torrent_size = row.pop('size', -1)
                 size = convert_size(torrent_size) or -1
 
-                pubdate = row.pop('pubdate')
-                pubdate = parser.parse(pubdate, fuzzy=True)
+                pubdate_raw = row.pop('pubdate')
+                pubdate = self._parse_pubdate(pubdate_raw)
 
                 item = {
                     'title': title,
